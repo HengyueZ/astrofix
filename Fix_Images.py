@@ -201,7 +201,7 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
         BadPix=np.asarray(np.nonzero(BP))
     else:
         BadPix=BP
-    BadPix=np.unique(BPIndex,axis=1)
+    BadPix=np.unique(BadPix,axis=1)
     # Estimate background distribution
     im_max=np.amax(image)
     bg_mean=np.median(image)
