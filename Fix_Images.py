@@ -207,7 +207,7 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
     bg_mean=np.median(image)
     bg_std=np.median(np.abs(image-np.median(image)))
     # Find out the brighter pixels
-    BrightPix=np.logical_and(image>bg_mean+5*bg_std,image<im_max/5)
+    BrightPix=np.logical_and(image>bg_mean+10*bg_std,image<im_max/5)
     # Use the brighter pixels as the training set
     para,residual=GPR_training(image,BrightPix,width=width,K=K)
     fixed_im,residual=GPR_fix(para[0],para[1],image,BadPix,width=width,K=K,fill=bg_mean)
