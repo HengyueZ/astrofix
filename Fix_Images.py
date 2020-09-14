@@ -96,7 +96,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             edge_bad_y=np.linspace(-h_width,-1-BP_indices[0,i],h_width-BP_indices[0,i])
             edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
             edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
+            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
             # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
             img[(h_width-BP_indices[0,i]):,:]=Image[0:(BP_indices[0,i]+h_width+1), \
@@ -110,7 +110,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             edge_bad_y=np.linspace(shape[0]-BP_indices[0,i],h_width,h_width-shape[0]+BP_indices[0,i]+1)
             edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
             edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
+            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
              # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
             img[:(h_width+shape[0]-BP_indices[0,i]),:]=Image[(BP_indices[0,i]-h_width):shape[0],\
@@ -124,7 +124,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             edge_bad_y=np.linspace(-h_width,h_width,width)
             edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
             edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
+            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
              # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
             img[:,(h_width-BP_indices[1,i]):]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
@@ -138,7 +138,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             edge_bad_y=np.linspace(-h_width,h_width,width)
             edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
             edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size))) 
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
+            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
             # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
             img[:,:(h_width+shape[1]-BP_indices[1,i])]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
