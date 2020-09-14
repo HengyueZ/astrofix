@@ -153,7 +153,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
         GPR_fixed_images[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_images, residual
 #%%
-def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9):
+def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
@@ -189,10 +189,10 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9):
             return np.mean(np.abs(residual)),residual
         else:
             return np.mean(np.abs(residual))
-    GPR_para=optimize.minimize(GPR_residual,[1,1],method="Powell").x
+    GPR_para=optimize.minimize(GPR_residual,init_guess,method="Powell").x
     return GPR_para**2,GPR_residual(GPR_para,full_residual=True)
 #%%
-def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
+def GPR_image_fix(image,BP,width=9,K=Squared_Expo,init_guess=[1,1]):
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
@@ -215,6 +215,6 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
     # Find out the brighter pixels
     BrightPix=np.logical_and(Image>bg_mean+10*bg_std,Image<im_max/5)
     # Use the brighter pixels as the training set
-    para,residual=GPR_training(Image,BrightPix,width=width,K=K)
+    para,residual=GPR_training(Image,BrightPix,width=width,K=K,init_guess=init_guess)
     fixed_im,residual=GPR_fix(para[0],para[1],Image,BadPix,width=width,K=K,fill=bg_mean)
     return fixed_im,para
