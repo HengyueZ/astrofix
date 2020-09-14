@@ -47,19 +47,21 @@ def GPR_Kernel (a,h,sig_data,K=Squared_Expo,width=9,badpix=np.array([[0],[0]]),c
     return Kernel
 #%%
 def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
+    # Make a copy of the image
+    Image=image.copy()
     # Supports images with bad pixels labeled as NaN
     if BP is "asnan":
-        mask=np.isnan(image)
+        mask=np.isnan(Image)
         # Convert Mask to indices of bad pixels
         BP_indices=np.asarray(np.nonzero(mask))
         # Replace NaN with a finite value for the training process
-        image[mask]=1
+        Image[mask]=1
     # Supports bad pixels indicated by a boolean mask
     elif BP.dtype == bool:
         BP_indices=np.asarray(np.nonzero(BP))
     else:
         BP_indices=BP
-    shape=image.shape
+    shape=Image.shape
     Nbad=BP_indices.shape[1]
     fixed_pix=np.zeros(Nbad)
     GPR_fixed_images=image.copy()
@@ -80,7 +82,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
         # Case 1: Far from edges
         if h_width <= BP_indices[0,i] < (shape[0]-h_width) and h_width <= BP_indices[1,i] < (shape[1]-h_width):
             # Construct the matrix of pixel values used in the convolution
-            img=image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1), \
+            img=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1), \
                             (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
             if close_bad.size==0:
                 kernel=perfect_kernel
@@ -97,7 +99,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
             # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
-            img[(h_width-BP_indices[0,i]):,:]=image[0:(BP_indices[0,i]+h_width+1), \
+            img[(h_width-BP_indices[0,i]):,:]=Image[0:(BP_indices[0,i]+h_width+1), \
                                                           (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
             # Convolution
             fixed_pix[i]=np.sum(incomplete_kernel*img)
@@ -111,7 +113,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
              # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
-            img[:(h_width+shape[0]-BP_indices[0,i]),:]=image[(BP_indices[0,i]-h_width):shape[0],\
+            img[:(h_width+shape[0]-BP_indices[0,i]),:]=Image[(BP_indices[0,i]-h_width):shape[0],\
                                                                    (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
             # Convolution
             fixed_pix[i]=np.sum(incomplete_kernel*img)
@@ -125,7 +127,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
              # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
-            img[:,(h_width-BP_indices[1,i]):]=image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
+            img[:,(h_width-BP_indices[1,i]):]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
                                                           0:(BP_indices[1,i]+h_width+1)]
             # Convolution
             fixed_pix[i]=np.sum(incomplete_kernel*img)
@@ -139,7 +141,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
             incomplete_kernel=GPR_Kernel(a,h,sig_data,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
             # Fill in zero if outside of the actual image
             img=np.zeros((width,width))
-            img[:,:(h_width+shape[1]-BP_indices[1,i])]=image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
+            img[:,:(h_width+shape[1]-BP_indices[1,i])]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
                                                                    (BP_indices[1,i]-h_width):shape[1]]
             # Convolution
             fixed_pix[i]=np.sum(incomplete_kernel*img)
@@ -147,31 +149,33 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
         if not (h_width <= BP_indices[0,i] < (shape[0]-h_width) or h_width <= BP_indices[1,i] < (shape[1]-h_width)):
             # Fill in a fixed value due to lack of information VS the complexity of matrix inversion
             fixed_pix[i]=fill
-        residual[i]=image[BP_indices[0,i],BP_indices[1,i]]-fixed_pix[i]
+        residual[i]=Image[BP_indices[0,i],BP_indices[1,i]]-fixed_pix[i]
         GPR_fixed_images[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_images, residual
 #%%
 def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9):
+    # Make a copy of the image
+    Image=image.copy()
     # Supports images with bad pixels labeled as NaN
     if TS is "asnan":
-        mask=np.isnan(image)
+        mask=np.isnan(Image)
         # Convert Mask to indices of trainer pixels
         TS_indices=np.asarray(np.nonzero(mask))
         # Replace NaN with a finite value for the training process
-        image[mask]=1
+        Image[mask]=1 #np.median(image[~mask])
     # Supports trainer pixels indicated by a boolean mask
     elif TS.dtype == bool:
         TS_indices=np.asarray(np.nonzero(TS))
     else:
         TS_indices=TS
-    shape=image.shape
+    shape=Image.shape
     Ntrain=TS_indices.shape[1]
     img=np.zeros((TS_indices.shape[1],width**2))
     for i in range (Ntrain):
         # Avoid training on pixels on the edges
         if (width-1)/2 <= TS_indices[0,i] < (shape[0]-(width-1)/2) and (width-1)/2 <= TS_indices[1,i] < (shape[1]-(width-1)/2):
             # Construct the matrix of pixel values used in the convolution
-            img_2D=image[(TS_indices[0,i]-int((width-1)/2)):(TS_indices[0,i]+int((width+1)/2)), \
+            img_2D=Image[(TS_indices[0,i]-int((width-1)/2)):(TS_indices[0,i]+int((width+1)/2)), \
                                           (TS_indices[1,i]-int((width-1)/2)):(TS_indices[1,i]+int((width+1)/2))]
             # Reshape into a row vector of the image matrix. The middle entry is the original pixel value.
             img[i]=np.reshape(img_2D,[width**2])
@@ -189,13 +193,15 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9):
     return GPR_para**2,GPR_residual(GPR_para,full_residual=True)
 #%%
 def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
+    # Make a copy of the image
+    Image=image.copy()
     # Supports images with bad pixels labeled as NaN
     if BP is "asnan":
-        mask=np.isnan(image)
+        mask=np.isnan(Image)
         # Convert Mask to indices of bad pixels
         BadPix=np.asarray(np.nonzero(mask))
         # Replace NaN with a finite value for the training process
-        image[mask]=1
+        Image[mask]=1 #np.median(image[~mask])
     # Supports bad pixels indicated by a boolean mask
     elif BP.dtype == bool:
         BadPix=np.asarray(np.nonzero(BP))
@@ -203,12 +209,12 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo):
         BadPix=BP
     BadPix=np.unique(BadPix,axis=1)
     # Estimate background distribution
-    im_max=np.amax(image)
-    bg_mean=np.median(image)
-    bg_std=np.median(np.abs(image-np.median(image)))
+    im_max=np.amax(Image)
+    bg_mean=np.median(Image)
+    bg_std=np.median(np.abs(Image-np.median(Image)))
     # Find out the brighter pixels
-    BrightPix=np.logical_and(image>bg_mean+10*bg_std,image<im_max/5)
+    BrightPix=np.logical_and(Image>bg_mean+10*bg_std,Image<im_max/5)
     # Use the brighter pixels as the training set
-    para,residual=GPR_training(image,BrightPix,width=width,K=K)
-    fixed_im,residual=GPR_fix(para[0],para[1],image,BadPix,width=width,K=K,fill=bg_mean)
+    para,residual=GPR_training(Image,BrightPix,width=width,K=K)
+    fixed_im,residual=GPR_fix(para[0],para[1],Image,BadPix,width=width,K=K,fill=bg_mean)
     return fixed_im,para
