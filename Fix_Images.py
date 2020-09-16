@@ -183,7 +183,7 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
     def GPR_residual(para,full_residual=False):
         kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data,K=K,width=width),width**2)
         # Convolve all trainer pixels at the same time using matrix-vector multiplication
-        convolved_pix=np.dot(img,kernel)
+        convolved_pix=img@kernel
         residual=(img[:,int((width**2-1)/2)]-convolved_pix)
         if full_residual:
             return np.mean(np.abs(residual)),residual
