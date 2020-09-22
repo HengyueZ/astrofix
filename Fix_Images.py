@@ -62,7 +62,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         BP_indices=BP.copy()
     Nbad=BP_indices.shape[1]
     fixed_pix=np.zeros(Nbad)
-    GPR_fixed_images=image.copy()
+    GPR_fixed_image=image.copy()
     h_width=width//2
     # Precompute the kernel for the case of no additional bad pixels
     perfect_kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,width=width)
@@ -77,8 +77,8 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
             bp=np.array([BP_indices[0,i]-max(0,BP_indices[0,i]-h_width),BP_indices[1,i]-max(0,BP_indices[1,i]-h_width)])
             kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,close_BP=submask,badpix=bp)
         fixed_pix[i]=np.sum(kernel*img)
-        GPR_fixed_images[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
-    return  GPR_fixed_images
+        GPR_fixed_image[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
+    return  GPR_fixed_image
 #%%
 def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
     # Make a copy of the image
