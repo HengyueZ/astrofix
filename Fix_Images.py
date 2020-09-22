@@ -43,153 +43,77 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=[4,4]
     Kernel=np.reshape(Kernel,close_BP.shape)
     return Kernel
 #%%
-def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
+def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
     # Make a copy of the image
     Image=image.copy()
+    shape=Image.shape
     # Supports images with bad pixels labeled as NaN
     if BP is "asnan":
-        mask=np.isnan(Image)
+        BP_mask=np.isnan(Image)
         # Convert Mask to indices of bad pixels
-        BP_indices=np.asarray(np.nonzero(mask))
-        # Replace NaN with a finite value for the training process
-        Image[mask]=1
+        BP_indices=np.asarray(np.nonzero(BP_mask))
     # Supports bad pixels indicated by a boolean mask
     elif BP.dtype == bool:
+        BP_mask=BP.copy()
         BP_indices=np.asarray(np.nonzero(BP))
     else:
-        BP_indices=BP
-    shape=Image.shape
+        BP_mask=np.zeros(image.shape,dtype=bool)
+        BP_mask[BP[0],BP[1]]=True
+        BP_indices=BP.copy()
     Nbad=BP_indices.shape[1]
     fixed_pix=np.zeros(Nbad)
     GPR_fixed_images=image.copy()
-    residual=np.zeros(Nbad)
-    h_width=int((width-1)/2)
+    h_width=width//2
     # Precompute the kernel for the case of no additional bad pixels
-    perfect_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width)
+    perfect_kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,width=width)
     for i in range (Nbad):
-        # Locate close bad pixels
-        #  isclose=np.logical_and(np.abs(BP_indices[0]-BP_indices[0,i])<=h_width,np.abs(BP_indices[1]-BP_indices[1,i])<=h_width)
-        isclose=np.all(np.abs((BP_indices.T-BP_indices[:,i].T).T)<=h_width,axis=0)
-        # Remove the central pixel itself
-        #close_not_central=np.logical_and(isclose,np.logical_or(BP_indices[0]!=BP_indices[0,i],BP_indices[1]!=BP_indices[1,i]))
-        close_not_central=np.logical_and(isclose,np.any(BP_indices!=BP_indices[:,i,None],axis=0))
-        close_bad=BP_indices[:,close_not_central]
-        # Convert to coordinates with central pixel at (0,0)
-        close_bad=(close_bad.T-BP_indices[:,i].T).T
-        # Case 1: Far from edges
-        if h_width <= BP_indices[0,i] < (shape[0]-h_width) and h_width <= BP_indices[1,i] < (shape[1]-h_width):
-            # Construct the matrix of pixel values used in the convolution
-            img=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1), \
-                            (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
-            if close_bad.size==0:
-                kernel=perfect_kernel
-            else:
-                kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=close_bad)
-            fixed_pix[i]=np.sum(kernel*img)
-        # Case 2: Top Edge
-        if BP_indices[0,i]< h_width and h_width <= BP_indices[1,i] < (shape[1]-h_width):
-            # Coordinates of edge bad pixels with central pixel at (0,0) 
-            edge_bad_x=np.linspace(-h_width,h_width,width)
-            edge_bad_y=np.linspace(-h_width,-1-BP_indices[0,i],h_width-BP_indices[0,i])
-            edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
-            edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
-            # Fill in zero if outside of the actual image
-            img=np.zeros((width,width))
-            img[(h_width-BP_indices[0,i]):,:]=Image[0:(BP_indices[0,i]+h_width+1), \
-                                                          (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
-            # Convolution
-            fixed_pix[i]=np.sum(incomplete_kernel*img)
-        # Case 3: Bottom Edge
-        if (shape[0]-h_width)<=BP_indices[0,i]<shape[0] and h_width <= BP_indices[1,i] < (shape[1]-h_width):
-            # Coordinates of edge bad pixels with central pixel at (0,0) 
-            edge_bad_x=np.linspace(-h_width,h_width,width)
-            edge_bad_y=np.linspace(shape[0]-BP_indices[0,i],h_width,h_width-shape[0]+BP_indices[0,i]+1)
-            edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
-            edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
-             # Fill in zero if outside of the actual image
-            img=np.zeros((width,width))
-            img[:(h_width+shape[0]-BP_indices[0,i]),:]=Image[(BP_indices[0,i]-h_width):shape[0],\
-                                                                   (BP_indices[1,i]-h_width):(BP_indices[1,i]+h_width+1)]
-            # Convolution
-            fixed_pix[i]=np.sum(incomplete_kernel*img)
-        # Case 4: Left Edge
-        if h_width <= BP_indices[0,i] < (shape[0]-h_width) and BP_indices[1,i]< h_width:
-            # Coordinates of edge bad pixels with central pixel at (0,0) 
-            edge_bad_x=np.linspace(-h_width,-1-BP_indices[1,i],h_width-BP_indices[1,i])
-            edge_bad_y=np.linspace(-h_width,h_width,width)
-            edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
-            edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size)))
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
-             # Fill in zero if outside of the actual image
-            img=np.zeros((width,width))
-            img[:,(h_width-BP_indices[1,i]):]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
-                                                          0:(BP_indices[1,i]+h_width+1)]
-            # Convolution
-            fixed_pix[i]=np.sum(incomplete_kernel*img)
-        # Case 5: Right Edge
-        if h_width <= BP_indices[0,i] < (shape[0]-h_width) and (shape[1]-h_width)<=BP_indices[1,i]<shape[1]:
-            # Coordinates of edge bad pixels with central pixel at (0,0) 
-            edge_bad_x=np.linspace(shape[1]-BP_indices[1,i],h_width,h_width-shape[1]+BP_indices[1,i]+1)
-            edge_bad_y=np.linspace(-h_width,h_width,width)
-            edge_bad_x,edge_bad_y=np.meshgrid(edge_bad_x,edge_bad_y)
-            edge_bad=np.vstack((np.reshape(edge_bad_y,edge_bad_y.size),np.reshape(edge_bad_x,edge_bad_x.size))) 
-            incomplete_kernel=GPR_Kernel(a,h,sig_data,K=K,width=width,close_badpix=np.append(edge_bad,close_bad,axis=1))
-            # Fill in zero if outside of the actual image
-            img=np.zeros((width,width))
-            img[:,:(h_width+shape[1]-BP_indices[1,i])]=Image[(BP_indices[0,i]-h_width):(BP_indices[0,i]+h_width+1),\
-                                                                   (BP_indices[1,i]-h_width):shape[1]]
-            # Convolution
-            fixed_pix[i]=np.sum(incomplete_kernel*img)
-        # Case 6: On the Corners:
-        if not (h_width <= BP_indices[0,i] < (shape[0]-h_width) or h_width <= BP_indices[1,i] < (shape[1]-h_width)):
-            # Fill in a fixed value due to lack of information VS the complexity of matrix inversion
-            fixed_pix[i]=fill
-        residual[i]=Image[BP_indices[0,i],BP_indices[1,i]]-fixed_pix[i]
+        img=Image[max(0,BP_indices[0,i]-h_width):BP_indices[0,i]+h_width+1,\
+                  max(0,BP_indices[1,i]-h_width):BP_indices[1,i]+h_width+1]
+        submask=BP_mask[max(0,BP_indices[0,i]-h_width):BP_indices[0,i]+h_width+1,\
+                        max(0,BP_indices[1,i]-h_width):BP_indices[1,i]+h_width+1]
+        if np.sum(submask)==1:
+            kernel=perfect_kernel
+        else:    
+            bp=np.array([BP_indices[0,i]-max(0,BP_indices[0,i]-h_width),BP_indices[1,i]-max(0,BP_indices[1,i]-h_width)])
+            kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,close_BP=submask,badpix=bp)
+        fixed_pix[i]=np.sum(kernel*img)
         GPR_fixed_images[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
-    return  GPR_fixed_images, residual
+    return  GPR_fixed_images
 #%%
 def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
     # Make a copy of the image
     Image=image.copy()
-    # Supports images with bad pixels labeled as NaN
-    if TS is "asnan":
-        mask=np.isnan(Image)
-        # Convert Mask to indices of trainer pixels
-        TS_indices=np.asarray(np.nonzero(mask))
-        # Replace NaN with a finite value for the training process
-        Image[mask]=1 #np.median(image[~mask])
     # Supports trainer pixels indicated by a boolean mask
-    elif TS.dtype == bool:
+    if TS.dtype == bool:
         TS_indices=np.asarray(np.nonzero(TS))
     else:
         TS_indices=TS
     shape=Image.shape
     Ntrain=TS_indices.shape[1]
     img=np.zeros((TS_indices.shape[1],width**2))
+    h_width=width//2
     for i in range (Ntrain):
         # Avoid training on pixels on the edges
-        if (width-1)/2 <= TS_indices[0,i] < (shape[0]-(width-1)/2) and (width-1)/2 <= TS_indices[1,i] < (shape[1]-(width-1)/2):
+        if h_width <= TS_indices[0,i] < (shape[0]-h_width) and h_width <= TS_indices[1,i] < (shape[1]-h_width):
             # Construct the matrix of pixel values used in the convolution
-            img_2D=Image[(TS_indices[0,i]-int((width-1)/2)):(TS_indices[0,i]+int((width+1)/2)), \
-                                          (TS_indices[1,i]-int((width-1)/2)):(TS_indices[1,i]+int((width+1)/2))]
+            img_2D=Image[(TS_indices[0,i]-h_width):(TS_indices[0,i]+h_width+1), \
+                                          (TS_indices[1,i]-h_width):(TS_indices[1,i]+h_width+1)]
             # Reshape into a row vector of the image matrix. The middle entry is the original pixel value.
             img[i]=np.reshape(img_2D,[width**2])
     # Function that computes the mean abs residual to minimize 
     def GPR_residual(para,full_residual=False):
-        kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data,K=K,width=width),width**2)
+        kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data=sig_data,K=K,width=width),width**2)
         # Convolve all trainer pixels at the same time using matrix-vector multiplication
         convolved_pix=img@kernel
-        residual=(img[:,int((width**2-1)/2)]-convolved_pix)
+        residual=(img[:,width**2//2]-convolved_pix)
         if full_residual:
-            return np.mean(np.abs(residual)),residual
+            return np.nanmean(np.abs(residual)),residual
         else:
-            return np.mean(np.abs(residual))
-    GPR_para=optimize.minimize(GPR_residual,init_guess,method="Powell").x
-    return GPR_para**2,GPR_residual(GPR_para,full_residual=True)
+            return np.nanmean(np.abs(residual))
+    para=optimize.minimize(GPR_residual,init_guess,method="Powell").x
+    return para**2,GPR_residual(para,full_residual=True)
 #%%
-def GPR_image_fix(image,BP,width=9,K=Squared_Expo,init_guess=[1,1]):
+def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1]):
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
@@ -197,8 +121,6 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo,init_guess=[1,1]):
         mask=np.isnan(Image)
         # Convert Mask to indices of bad pixels
         BadPix=np.asarray(np.nonzero(mask))
-        # Replace NaN with a finite value for the training process
-        Image[mask]=1 #np.median(image[~mask])
     # Supports bad pixels indicated by a boolean mask
     elif BP.dtype == bool:
         BadPix=np.asarray(np.nonzero(BP))
@@ -210,8 +132,8 @@ def GPR_image_fix(image,BP,width=9,K=Squared_Expo,init_guess=[1,1]):
     bg_mean=np.median(Image)
     bg_std=np.median(np.abs(Image-np.median(Image)))
     # Find out the brighter pixels
-    BrightPix=np.logical_and(Image>bg_mean+10*bg_std,Image<im_max/5)
+    BrightPix=np.logical_and(Image>bg_mean+sig_clip*bg_std,Image<im_max/max_clip)
     # Use the brighter pixels as the training set
-    para,residual=GPR_training(Image,BrightPix,width=width,K=K,init_guess=init_guess)
-    fixed_im,residual=GPR_fix(para[0],para[1],Image,BadPix,width=width,K=K,fill=bg_mean)
+    para,residual=GPR_training(Image,BrightPix,sig_data=sig_data,width=width,K=K,init_guess=init_guess)
+    fixed_im=GPR_fix(para[0],para[1],Image,BadPix,sig_data=sig_data,width=width,K=K)
     return fixed_im,para
