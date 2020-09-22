@@ -24,26 +24,23 @@ def Periodic(x1,x2,y1,y2,a,h):
     _y1,_y2=np.meshgrid(y1,y2)
     return a**2*np.exp(-2*np.sin(np.sqrt((_x1-_x2)**2+(_y1-_y2)**2)/2)**2/h**2)
 #%%
-def GPR_Kernel (a,h,sig_data,K=Squared_Expo,width=9,badpix=np.array([[0],[0]]),close_badpix=None):
-    x=np.linspace(badpix[0]-(width-1)/2,badpix[0]+(width-1)/2,width)
-    y=np.linspace(badpix[1]-(width-1)/2,badpix[1]+(width-1)/2,width)
+def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=[4,4]):
+    if close_BP is None:
+        close_BP=np.zeros((width,width),dtype=bool)
+        close_BP[badpix[0],badpix[1]]=True
+    good_pix=~close_BP
+    # Change to coordinate where the bad pixel to be fixed is at (0,0)
+    x=np.linspace(-badpix[1],close_BP.shape[1]-badpix[1]-1,close_BP.shape[1])
+    y=np.linspace(-badpix[0],close_BP.shape[0]-badpix[0]-1,close_BP.shape[0])
     x,y=np.meshgrid(x,y)
-    # Reshape into an 1D vector of coordinates
-    x=np.reshape(x,width**2)
-    y=np.reshape(y,width**2)
-    all_badpix=badpix.copy()
-    if close_badpix is not None:
-        all_badpix=np.append(badpix,close_badpix,axis=1)
-    # Check each point (x,y) for bad pixels to get the boolean array of good pixels
-    good_pix=~(np.vstack((y,x)).T[:,None]==all_badpix.T).all(axis=-1).any(axis=-1)
     Cov_data=np.identity(x[good_pix].size)*sig_data**2    
     Kinv=np.linalg.inv(K(x[good_pix],x[good_pix],y[good_pix],y[good_pix],a,h)+Cov_data)
-    Kernel=np.zeros(width**2)
-    Kernel[good_pix]=np.dot(K(x[good_pix],badpix[0,0],y[good_pix],badpix[1,0],a,h),Kinv)[0]
+    Kernel=np.zeros(close_BP.shape)
+    Kernel[good_pix]=np.dot(K(x[good_pix],0,y[good_pix],0,a,h),Kinv)[0]
     # Normalization
     Kernel/=np.sum(Kernel)
     # Reshape back to 2D
-    Kernel=np.reshape(Kernel,[width,width])
+    Kernel=np.reshape(Kernel,close_BP.shape)
     return Kernel
 #%%
 def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9,fill=1.0):
