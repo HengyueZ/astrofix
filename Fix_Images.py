@@ -98,6 +98,9 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
             # Construct the matrix of pixel values used in the convolution
             img_2D=Image[(TS_indices[0,i]-h_width):(TS_indices[0,i]+h_width+1), \
                                           (TS_indices[1,i]-h_width):(TS_indices[1,i]+h_width+1)]
+            # Check if nan values are included
+            if np.any(np.isnan(img_2D)):
+                continue
             # Reshape into a row vector of the image matrix. The middle entry is the original pixel value.
             img[i]=np.reshape(img_2D,[width**2])
     # Function that computes the mean abs residual to minimize 
@@ -107,33 +110,28 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
         convolved_pix=img@kernel
         residual=(img[:,width**2//2]-convolved_pix)
         if full_residual:
-            return np.nanmean(np.abs(residual)),residual
+            return np.mean(np.abs(residual)),residual
         else:
-            return np.nanmean(np.abs(residual))
+            return np.mean(np.abs(residual))
     para=optimize.minimize(GPR_residual,init_guess,method="Powell").x
     return para**2,GPR_residual(para,full_residual=True)
 #%%
 def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1]):
     # Make a copy of the image
     Image=image.copy()
-    # Supports images with bad pixels labeled as NaN
+    # Remove repeating indices
+    if not (BP is "asnan" or BP.dtype==bool):
+        BP=np.unique(BP,axis=1)
+    # Replace NaN values with 1 to naturally exclude them from the training set
     if BP is "asnan":
-        mask=np.isnan(Image)
-        # Convert Mask to indices of bad pixels
-        BadPix=np.asarray(np.nonzero(mask))
-    # Supports bad pixels indicated by a boolean mask
-    elif BP.dtype == bool:
-        BadPix=np.asarray(np.nonzero(BP))
-    else:
-        BadPix=BP
-    BadPix=np.unique(BadPix,axis=1)
+        Image[np.isnan(Image)]=1
     # Estimate background distribution
-    im_max=np.amax(Image)
+    im_max=np.max(Image)
     bg_mean=np.median(Image)
     bg_std=np.median(np.abs(Image-np.median(Image)))
     # Find out the brighter pixels
     BrightPix=np.logical_and(Image>bg_mean+sig_clip*bg_std,Image<im_max/max_clip)
     # Use the brighter pixels as the training set
     para,residual=GPR_training(Image,BrightPix,sig_data=sig_data,width=width,K=K,init_guess=init_guess)
-    fixed_im=GPR_fix(para[0],para[1],Image,BadPix,sig_data=sig_data,width=width,K=K)
+    fixed_im=GPR_fix(para[0],para[1],Image,BP,sig_data=sig_data,width=width,K=K)
     return fixed_im,para
