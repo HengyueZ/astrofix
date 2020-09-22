@@ -126,7 +126,7 @@ def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_E
     if BP is "asnan":
         Image[np.isnan(Image)]=1
     # Estimate background distribution
-    im_max=np.max(Image)
+    im_max=np.amax(Image)
     bg_mean=np.median(Image)
     bg_std=np.median(np.abs(Image-np.median(Image)))
     # Find out the brighter pixels
