@@ -12,7 +12,11 @@ from math import *
 def Squared_Expo(x1,x2,y1,y2,a,h):
     _x1,_x2=np.meshgrid(x1,x2)
     _y1,_y2=np.meshgrid(y1,y2)
-    return a**2*np.exp(-((_x1-_x2)**2+(_y1-_y2)**2)/(2*h**2))
+    # Check if separate h_x and h_y are used
+    if type(h)==list:
+        return a**2*np.exp(-(_x1-_x2)**2/(2*h[0]**2)+(_y1-_y2)**2/(2*h[1]**2))
+    else:
+        return a**2*np.exp(-((_x1-_x2)**2+(_y1-_y2)**2)/(2*h**2))
 #%%
 def Ornstein_U(x1,x2,y1,y2,a,h):
     _x1,_x2=np.meshgrid(x1,x2)
@@ -65,13 +69,13 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
     GPR_fixed_image=image.copy()
     h_width=width//2
     # Precompute the kernel for the case of no additional bad pixels
-    perfect_kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,width=width)
+    perfect_kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,width=width,badpix=[h_width,h_width])
     for i in range (Nbad):
         img=Image[max(0,BP_indices[0,i]-h_width):BP_indices[0,i]+h_width+1,\
                   max(0,BP_indices[1,i]-h_width):BP_indices[1,i]+h_width+1]
         submask=BP_mask[max(0,BP_indices[0,i]-h_width):BP_indices[0,i]+h_width+1,\
                         max(0,BP_indices[1,i]-h_width):BP_indices[1,i]+h_width+1]
-        if np.sum(submask)==1:
+        if np.sum(submask)==1 and submask.size==width**2:
             kernel=perfect_kernel
         else:    
             bp=np.array([BP_indices[0,i]-max(0,BP_indices[0,i]-h_width),BP_indices[1,i]-max(0,BP_indices[1,i]-h_width)])
@@ -80,7 +84,7 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         GPR_fixed_image[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_image
 #%%
-def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
+def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=np.array([1,1])):
     # Make a copy of the image
     Image=image.copy()
     # Supports trainer pixels indicated by a boolean mask
@@ -105,7 +109,11 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
             img[i]=np.reshape(img_2D,[width**2])
     # Function that computes the mean abs residual to minimize 
     def GPR_residual(para,full_residual=False):
-        kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data=sig_data,K=K,width=width),width**2)
+        if init_guess.size==2:
+            kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data=sig_data,K=K,width=width,badpix=[h_width,h_width]),width**2)
+        else:
+            kernel=np.reshape(GPR_Kernel(para[0]**2,[para[1]**2,para[2]**2],sig_data=sig_data,K=K,\
+                                         width=width,badpix=[h_width,h_width]),width**2)
         # Convolve all trainer pixels at the same time using matrix-vector multiplication
         convolved_pix=img@kernel
         residual=(img[:,width**2//2]-convolved_pix)
@@ -113,10 +121,10 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=[1,1]):
             return np.mean(np.abs(residual)),residual
         else:
             return np.mean(np.abs(residual))
-    para=optimize.minimize(GPR_residual,init_guess,method="Powell").x
+    para=optimize.minimize(GPR_residual,init_guess**(1/2),method="Powell").x
     return para**2,GPR_residual(para,full_residual=True)
 #%%
-def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1]):
+def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=np.array([1,1])):
     # Make a copy of the image
     Image=image.copy()
     # Remove repeating indices
@@ -133,5 +141,8 @@ def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_E
     BrightPix=np.logical_and(Image>bg_mean+sig_clip*bg_std,Image<im_max/max_clip)
     # Use the brighter pixels as the training set
     para,residual=GPR_training(Image,BrightPix,sig_data=sig_data,width=width,K=K,init_guess=init_guess)
-    fixed_im=GPR_fix(para[0],para[1],Image,BP,sig_data=sig_data,width=width,K=K)
+    if init_guess.size==2:
+        fixed_im=GPR_fix(para[0],para[1],Image,BP,sig_data=sig_data,width=width,K=K)
+    else:
+        fixed_im=GPR_fix(para[0],[para[1],para[2]],Image,BP,sig_data=sig_data,width=width,K=K)
     return fixed_im,para
