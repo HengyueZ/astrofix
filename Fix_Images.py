@@ -115,9 +115,9 @@ def GPR_training(image,TS,sig_data=1,K=Squared_Expo,width=9,init_guess=np.array(
     # Function that computes the mean abs residual to minimize 
     def GPR_residual(para,full_residual=False):
         # Avoid singular matrices
-        if np.any(np.abs(para)>1e3) or np.any(np.abs(para)<1e-1):
-            raise np.linalg.LinAlgError("Watch out for singular matrices! Try other initial values.")
-            # return np.inf
+        # h greater than a quarter pixel but less than width, a not below one, large a reasonable
+        if para[0]**2<1 or np.any(para[1:]**2>width) or np.any(para[1:]**2<1/4):
+            return 1e10
         if init_guess.size==2:
             kernel=np.reshape(GPR_Kernel(para[0]**2,para[1]**2,sig_data=sig_data,K=K,width=width,badpix=[h_width,h_width]),width**2)
         else:
@@ -150,8 +150,10 @@ def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_E
     im_max=np.nanmax(Image)
     bg_mean=np.nanmedian(Image)
     bg_std=np.nanmedian(np.abs(Image-np.nanmedian(Image)))
-    # Find out the brighter pixels
-    BrightPix=np.logical_and(Image>bg_mean+sig_clip*bg_std,Image<im_max/max_clip)
+    # Find out the trainer pixels
+    # Igore the warnings from comparing nan values
+    with np.errstate(invalid='ignore'):
+        BrightPix=np.logical_and(Image>bg_mean+sig_clip*bg_std,Image<im_max/max_clip)
     # Use the brighter pixels as the training set
     para,residual=GPR_training(Image,BrightPix,sig_data=sig_data,width=width,K=K,init_guess=init_guess)
     if init_guess.size==2:
