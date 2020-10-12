@@ -23,10 +23,12 @@ def Ornstein_U(x1,x2,y1,y2,a,h):
 def Periodic(x1,x2,y1,y2,a,h):
     return a**2*np.exp(-2*np.sin(np.sqrt((x1[:,np.newaxis]-x2[np.newaxis,:])**2+(y1[:,np.newaxis]-y2[np.newaxis,:])**2)/2)**2/h**2)
 #%%
-def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=[4,4],x_grid=None,y_grid=None):
+def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,x_grid=None,y_grid=None):
+    if badpix is None:
+        badpix=[width//2,width//2]
     if close_BP is None:
         close_BP=np.zeros((width,width),dtype=bool)
-        close_BP[width//2,width//2]=True
+        close_BP[badpix[0],badpix[1]]=True
     good_pix=~close_BP
     if x_grid is None and y_grid is None:
         x=np.linspace(0,close_BP.shape[1]-1,close_BP.shape[1])
