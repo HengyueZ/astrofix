@@ -26,7 +26,7 @@ def Periodic(x1,x2,y1,y2,a,h):
 def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=[4,4],x_grid=None,y_grid=None):
     if close_BP is None:
         close_BP=np.zeros((width,width),dtype=bool)
-        close_BP[badpix[0],badpix[1]]=True
+        close_BP[width//2,width//2]=True
     good_pix=~close_BP
     if x_grid is None and y_grid is None:
         x=np.linspace(0,close_BP.shape[1]-1,close_BP.shape[1])
