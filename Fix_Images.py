@@ -86,8 +86,8 @@ def GPR_fix(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         if np.sum(submask)==1 and submask.size==width**2:
             kernel=perfect_kernel
         else: 
-            x_grid=x[:submask.shape[1],:submask.shape[1]]
-            y_grid=y[:submask.shape[0],:submask.shape[0]]
+            x_grid=x[:submask.shape[0],:submask.shape[1]]
+            y_grid=y[:submask.shape[0],:submask.shape[1]]
             bp=np.array([BP_indices[0,i]-max(0,BP_indices[0,i]-h_width),BP_indices[1,i]-max(0,BP_indices[1,i]-h_width)])
             kernel=GPR_Kernel(a,h,sig_data=sig_data,K=K,close_BP=submask,badpix=bp,x_grid=x_grid,y_grid=y_grid)
         fixed_pix[i]=np.sum(kernel*img)
