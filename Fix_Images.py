@@ -143,11 +143,14 @@ def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_E
         BP=np.unique(BP,axis=1)
     # Check if bad pixels are wished to be included in the training
     if bad_to_nan:
+        current_BP="asnan"
         if not (BP is "asnan") and BP.dtype==bool:
             # Make the bad pixels nan to avoid them in the training set
             Image[BP]=np.nan
         if not (BP is "asnan" or BP.dtype==bool):
             Image[BP[0],BP[1]]=np.nan
+    else:
+        current_BP=BP.copy()
     # Estimate background distribution
     im_max=np.nanmax(Image)
     bg_mean=np.nanmedian(Image)
@@ -159,7 +162,7 @@ def GPR_image_fix(image,BP,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_E
     # Use the brighter pixels as the training set
     para,residual=GPR_training(Image,BrightPix,sig_data=sig_data,width=width,K=K,init_guess=init_guess)
     if init_guess.size==2:
-        fixed_im=GPR_fix(para[0],para[1],Image,BP,sig_data=sig_data,width=width,K=K)
+        fixed_im=GPR_fix(para[0],para[1],Image,current_BP,sig_data=sig_data,width=width,K=K)
     else:
-        fixed_im=GPR_fix(para[0],[para[1],para[2]],Image,BP,sig_data=sig_data,width=width,K=K)
+        fixed_im=GPR_fix(para[0],[para[1],para[2]],Image,current_BP,sig_data=sig_data,width=width,K=K)
     return fixed_im,para
