@@ -117,7 +117,7 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         GPR_fixed_image[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_image
 #%%
-def GPR_Train(image,TS=None,sig_data=1,K=Squared_Expo,width=9,sig_clip=10,max_clip=5,init_guess=[1,1]):
+def GPR_Train(image,TS=None,sig_data=1,K=Squared_Expo,width=9,sig_clip=10,max_clip=5,init_guess=[1,1],upper_bound=True,mu=3000,tau=200):
     # Make a copy of the image
     Image=image.copy()
     if TS is None:
@@ -168,6 +168,13 @@ def GPR_Train(image,TS=None,sig_data=1,K=Squared_Expo,width=9,sig_clip=10,max_cl
         # Convolve all training set pixels at the same time using matrix-vector multiplication
         convolved_pix=img@kernel
         residual=(img[:,width**2//2]-convolved_pix)
+        if upper_bound:
+            # Impose the soft upper bound on a to avoid large condition numbers while constructing kernels
+            penalty=1+np.exp((para[0]**2-mu)/tau)
+        else:
+            # No upper bound on a
+            penalty=1
+        residual*=penalty
         if full_residual:
             return np.mean(np.abs(residual)),residual
         else:
