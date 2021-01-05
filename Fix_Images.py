@@ -4,7 +4,6 @@
 #%%
 import numpy as np
 from scipy import optimize
-from math import *
 from warnings import warn
 from astropy.utils.exceptions import AstropyUserWarning
 #%%
@@ -72,7 +71,6 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
 def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
     # Make a copy of the image
     Image=image.copy()
-    shape=Image.shape
     # Supports images with bad pixels labeled as NaN
     if BP is "asnan":
         BP_mask=np.isnan(Image)
