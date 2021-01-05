@@ -1,3 +1,3 @@
 # astrofix
-Astro-Fix is an astronomical image correction algorithm. It imputes the correct value of a bad pixel by Gaussian Process Regression.  
+Astro-Fix is an astronomical image correction algorithm based on Gaussian Process Regression.  
 Our paper can be found at 
