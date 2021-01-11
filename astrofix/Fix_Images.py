@@ -115,9 +115,17 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         GPR_fixed_image[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_image
 #%%
-def GPR_Train(image,TS=None,sig_data=1,K=Squared_Expo,width=9,sig_clip=10,max_clip=5,init_guess=[1,1],upper_bound=True,mu=3000,tau=200):
+def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
+              sig_clip=10,max_clip=5,init_guess=[1,1],upper_bound=True,mu=3000,tau=200):
     # Make a copy of the image
     Image=image.copy()
+    # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
+    if BP is not "asnan":
+        Image=Image.astype(float)
+        if BP.dtype==bool:
+            Image[BP]=np.nan
+        else:
+            Image[BP[0],BP[1]]=np.nan
     if TS is None:
         # The default training set
         # Estimate background distribution
@@ -186,15 +194,14 @@ def Fix_Image(image,BP,TS=None,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squar
     # Remove repeating indices
     if not (BP is "asnan" or BP.dtype==bool):
         BP=np.unique(BP,axis=1)
-    # Check if bad pixels are wished to be included in the training
+    # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
     if bad_to_nan:
+        Image=Image.astype(float)
         current_BP="asnan"
         if not (BP is "asnan") and BP.dtype==bool:
             # Make the bad pixels nan to avoid them in the training set
-            Image=Image.astype(float)
             Image[BP]=np.nan
         if not (BP is "asnan" or BP.dtype==bool):
-            Image=Image.astype(float)
             Image[BP[0],BP[1]]=np.nan
     else:
         current_BP=BP.copy()
