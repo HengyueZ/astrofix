@@ -1,42 +1,186 @@
 # -*- coding: utf-8 -*-
 """
 """
-#%%
 import numpy as np
 from scipy import optimize
 from warnings import warn
 from astropy.utils.exceptions import AstropyUserWarning
-#%%
+
 def Squared_Expo(x1,x2,y1,y2,a,h):
+    """
+    Squared_Expo(x1,x2,y1,y2,a,h)
+    Compute the covariance matrix between points in set 1 and set 2, using the Squared Exponential covariance function. 
+    
+    Parameters
+    ----------
+    x1: float numpy array
+       An array of x-coodinates for points in set 1.
+       
+    x2: float numpy array
+       An array of x-coodinates for points in set 2.
+       
+    y1: float numpy array
+       An array of y-coodinates for points in set 1.
+       
+    y2: float numpy array
+       An array of y-coodinates for points in set 2.
+    
+    a: float
+       A parameter scaling the correlation between points.  
+    
+    h: float ot numpy array
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+       different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
+    
+    Returns
+    -------
+    Cov: float numpy array
+       The covariance matrix.
+    """
     # Check if separate h_x and h_y are used
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
             raise ValueError("For a stretched kernel, h must have exactly two values (h_x and h_y)")
         else:
-            return a**2*np.exp(-(x1[:, np.newaxis] - x2[np.newaxis, :])**2/(2*h[0]**2)-\
+            Cov=a**2*np.exp(-(x1[:, np.newaxis] - x2[np.newaxis, :])**2/(2*h[0]**2)-\
                                (y1[:, np.newaxis] - y2[np.newaxis, :])**2/(2*h[1]**2))
+            return Cov
     else:
-        return a**2*np.exp(-((x1[:, np.newaxis] - x2[np.newaxis, :])**2+(y1[:, np.newaxis] - y2[np.newaxis, :])**2)*(1/(2*h**2)))
-#%%
+        Cov=a**2*np.exp(-((x1[:, np.newaxis] - x2[np.newaxis, :])**2+(y1[:, np.newaxis] - y2[np.newaxis, :])**2)*(1/(2*h**2)))
+        return Cov
+
 def Ornstein_U(x1,x2,y1,y2,a,h):
+    """
+    Ornstein_U(x1,x2,y1,y2,a,h)
+    Compute the covariance matrix between points in set 1 and set 2, using the Ornstein-Uhlenbeck covariance function. 
+    
+    Parameters
+    ----------
+    x1: float numpy array
+       An array of x-coodinates for points in set 1.
+       
+    x2: float numpy array
+       An array of x-coodinates for points in set 2.
+       
+    y1: float numpy array
+       An array of y-coodinates for points in set 1.
+       
+    y2: float numpy array
+       An array of y-coodinates for points in set 2.
+       
+    a: float
+       A parameter scaling the correlation between points.  
+    
+    h: float ot numpy array
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+       different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
+    
+    Returns
+    -------
+    Cov: float numpy array
+       The covariance matrix.
+    """
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
             raise ValueError("For a stretched kernel, h must have exactly two values (h_x and h_y)")
         else:
-            return a**2*np.exp(-np.abs(x1[:,np.newaxis]-x2[np.newaxis,:])/h[0]-np.abs(y1[:,np.newaxis]-y2[np.newaxis,:])/h[1])
+            Cov=a**2*np.exp(-np.abs(x1[:,np.newaxis]-x2[np.newaxis,:])/h[0]-np.abs(y1[:,np.newaxis]-y2[np.newaxis,:])/h[1])
+            return Cov
     else:
-        return a**2*np.exp(-np.sqrt((x1[:,np.newaxis]-x2[np.newaxis,:])**2+(y1[:,np.newaxis]-y2[np.newaxis,:])**2)/h)
-#%%
+        Cov=a**2*np.exp(-np.sqrt((x1[:,np.newaxis]-x2[np.newaxis,:])**2+(y1[:,np.newaxis]-y2[np.newaxis,:])**2)/h)
+        return Cov
+
 def Periodic(x1,x2,y1,y2,a,h):
+    """
+    Periodic(x1,x2,y1,y2,a,h)
+    Compute the covariance matrix between points in set 1 and set 2, using the periodic covariance function. 
+    
+    Parameters
+    ----------
+    x1: float numpy array
+       An array of x-coodinates for points in set 1.
+       
+    x2: float numpy array
+       An array of x-coodinates for points in set 2.
+       
+    y1: float numpy array
+       An array of y-coodinates for points in set 1.
+       
+    y2: float numpy array
+       An array of y-coodinates for points in set 2.
+       
+    a: float
+       A parameter scaling the correlation between points.  
+    
+    h: float ot numpy array
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+       different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
+    
+    Returns
+    -------
+    Cov: float numpy array
+       The covariance matrix.
+    """
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
             raise ValueError("For a stretched kernel, h must have exactly two values (h_x and h_y)")
         else:
-            return a**2*np.exp(-2*(np.sin(x1[:,np.newaxis]-x2[np.newaxis,:])**2/h[0]**2\
-                               +np.sin(y1[:,np.newaxis]-y2[np.newaxis,:])**2/h[1]**2))
-    return a**2*np.exp(-2*np.sin(np.sqrt((x1[:,np.newaxis]-x2[np.newaxis,:])**2+(y1[:,np.newaxis]-y2[np.newaxis,:])**2)/2)**2/h**2)
-#%%
+            Cov=a**2*np.exp(-2*(np.sin(x1[:,np.newaxis]-x2[np.newaxis,:])**2/h[0]**2\
+                                +np.sin(y1[:,np.newaxis]-y2[np.newaxis,:])**2/h[1]**2))
+            return Cov
+    else:
+        Cov=a**2*np.exp(-2*np.sin(np.sqrt((x1[:,np.newaxis]-x2[np.newaxis,:])**2+(y1[:,np.newaxis]-y2[np.newaxis,:])**2)/2)**2/h**2)
+        return Cov
+
 def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,x_grid=None,y_grid=None):
+    """
+    GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,x_grid=None,y_grid=None)
+    Construct a GPR interpolation kernel.
+    
+    Parameters
+    ----------  
+    a: float
+       Parameter in the covariance function; the correlation between points.  
+    
+    h: float ot numpy array
+       Parameter in the covariance function; the characteristic scale over which the correlation values vary. 
+       If h is an numpy array, different characteristic scales will be used in the x and y 
+       directions, with h[0]=h_x and h[1]=h_y.  
+       
+    sig_data: float, optional
+       Measurement noise, assumed to be uniform. The kernel depends only on the ratio 
+       a/sig_data. Default: 1.  
+       
+    K: callable, optional
+       The covariance function to be used. The options are: Squared_Expo, Ornstein_U, and Periodic. 
+       See the corresponding functions above for their definitions. Default: Squared_Expo.
+       
+    close_BP: boolean numpy array, optional
+       A boolean mask that specifies the bad pixel locations in the kernel. Masked pixels will be 
+       assigned zero weights. The shape of the kernel will be the same as the shape of the mask. 
+       If no mask is provided, the kernel will be width*width with the only bad pixel located at 
+       the center. Default: None.  
+       
+    width: int, optional
+       The width of the default mask if close_BP is None. Default: 9.  
+       
+    badpix: int numpy array, optional
+       Index of the bad pixel to be fixed in the close_BP mask. If not provided, it will be 
+       [width//2,width//2]. Default: None.  
+       
+    x_grid: int numpy array, optional
+       A 2d-array specifying the x-coordinates of the pixels. If not provided, it will be x going 
+       from 0 to close_BP.shape[1]-1. Default: None.
+       
+    y_grid: int numpy array, optional
+       A 2d-array specifying the y-coordinates of the pixels. Must be of the same shape as x_grid. 
+       If not provided, it will be y going from 0 to close_BP.shape[0]-1. Default: None.
+       
+    Returns
+    -------
+    Kernel: float numpy array
+       The constructed kernel.
+    """
     if badpix is None:
         badpix=[width//2,width//2]
     if close_BP is None:
