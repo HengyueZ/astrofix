@@ -11,25 +11,23 @@ def Squared_Expo(x1,x2,y1,y2,a,h):
     Squared_Expo(x1,x2,y1,y2,a,h)
     Compute the covariance matrix between points in set 1 and set 2, using the Squared Exponential covariance function. 
     
-    Parameters
-    ----------
-    x1: float numpy array
+    x1: numpy array, shape (m,)
        An array of x-coodinates for points in set 1.
        
-    x2: float numpy array
+    x2: numpy array, shape (n,)
        An array of x-coodinates for points in set 2.
        
-    y1: float numpy array
+    y1: float numpy array, shape (m,)
        An array of y-coodinates for points in set 1.
        
-    y2: float numpy array
+    y2: float numpy array, shape (n,)
        An array of y-coodinates for points in set 2.
-    
+       
     a: float
        A parameter scaling the correlation between points.  
     
-    h: float ot numpy array
-       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+    h: float or shape (2,) array-like
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is a list or numpy array, 
        different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
     
     Returns
@@ -56,23 +54,23 @@ def Ornstein_U(x1,x2,y1,y2,a,h):
     
     Parameters
     ----------
-    x1: float numpy array
+    x1: numpy array, shape (m,)
        An array of x-coodinates for points in set 1.
        
-    x2: float numpy array
+    x2: numpy array, shape (n,)
        An array of x-coodinates for points in set 2.
        
-    y1: float numpy array
+    y1: float numpy array, shape (m,)
        An array of y-coodinates for points in set 1.
        
-    y2: float numpy array
+    y2: float numpy array, shape (n,)
        An array of y-coodinates for points in set 2.
        
     a: float
        A parameter scaling the correlation between points.  
     
-    h: float ot numpy array
-       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+    h: float or shape (2,) array-like
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is a list or numpy array, 
        different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
     
     Returns
@@ -97,23 +95,23 @@ def Periodic(x1,x2,y1,y2,a,h):
     
     Parameters
     ----------
-    x1: float numpy array
+    x1: numpy array, shape (m,)
        An array of x-coodinates for points in set 1.
        
-    x2: float numpy array
+    x2: numpy array, shape (n,)
        An array of x-coodinates for points in set 2.
        
-    y1: float numpy array
+    y1: float numpy array, shape (m,)
        An array of y-coodinates for points in set 1.
        
-    y2: float numpy array
+    y2: float numpy array, shape (n,)
        An array of y-coodinates for points in set 2.
        
     a: float
        A parameter scaling the correlation between points.  
     
-    h: float ot numpy array
-       A parameter scaling the characteristic length over which the corrlation values vary. If h is an numpy array, 
+    h: float or shape (2,) array-like
+       A parameter scaling the characteristic length over which the corrlation values vary. If h is a list or numpy array, 
        different characteristic scales will be used in the x and y directions, with h[0]=h_x and h[1]=h_y.
     
     Returns
@@ -142,7 +140,7 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
     a: float
        Parameter in the covariance function; the correlation between points.  
     
-    h: float ot numpy array
+    h: float or shape (2,) array-like
        Parameter in the covariance function; the characteristic scale over which the correlation values vary. 
        If h is an numpy array, different characteristic scales will be used in the x and y 
        directions, with h[0]=h_x and h[1]=h_y.  
@@ -152,7 +150,7 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
        a/sig_data. Default: 1.  
        
     K: callable, optional
-       The covariance function to be used. The options are: Squared_Expo, Ornstein_U, and Periodic. 
+       The covariance function to be used. The built-in options are: Squared_Expo, Ornstein_U, and Periodic. 
        See the corresponding functions above for their definitions. Default: Squared_Expo.
        
     close_BP: boolean numpy array, optional
@@ -164,7 +162,7 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
     width: int, optional
        The width of the default mask if close_BP is None. Default: 9.  
        
-    badpix: int numpy array, optional
+    badpix: shape (2,) int numpy array, optional
        Index of the bad pixel to be fixed in the close_BP mask. If not provided, it will be 
        [width//2,width//2]. Default: None.  
        
@@ -211,8 +209,44 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
     # Reshape back to 2D
     Kernel=np.reshape(Kernel,close_BP.shape)
     return Kernel
-#%%
+
 def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
+    """
+    Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9)
+    Correcting the values of bad pixels by interpolation.
+    
+    Parameters
+    ----------
+    a: float
+       Same as in GPR_Kernel.
+       
+    h: float or shape (2,) array-like
+       Same as in GPR_Kernel.
+       
+    image: numpy array 
+       The image to be fixed.
+       
+    BP: {boolean numpy array, "asnan", shape (2,N_{bad}) int numpy array}
+       The bad pixels to be fixed. Supports three different formats:  
+       (1) A boolean mask with bad pixels having values of True. Must be of the same shape as image.    
+       (2) The string "asnan", meaning that the bad pixels are labeled in the image by np.nan.   
+       (3) A shape (2,N_{bad}) array, with the first row giving the y indices and the second row 
+           giving the corresponding x indices of the bad pixels.
+           
+    sig_data: float, optional
+       Same as in GPR_Kernel. Default: 1.
+       
+    K: callable, optional
+       Same as in GPR_Kernel. Default: Squared_Expo.
+    
+    width: int, optional 
+       Same as in GPR_Kernel. Default: 9.
+
+    Returns
+    -------
+    GPR_fixed_image: float numpy array
+       The fixed image.
+    """
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
@@ -258,9 +292,80 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
             warn("Nan values detected post convolution. Use a larger kernel width.",AstropyUserWarning)
         GPR_fixed_image[BP_indices[0,i],BP_indices[1,i]]=fixed_pix[i]
     return  GPR_fixed_image
-#%%
+
 def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
               sig_clip=10,max_clip=5,init_guess=[1,1],upper_bound=True,mu=3000,tau=200):
+    """
+    GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
+              sig_clip=10,max_clip=5,init_guess=[1,1],upper_bound=True,mu=3000,tau=200)
+    Find the optimal kernel parameter values for a given image by minimizing the mean absolute residual of convolution.
+    
+    Parameters
+    ----------
+    image: numpy array
+       The image to be trained on.  
+       
+    TS: boolean numpy arrary or shape (2,N_{train}) int numpy array, optional 
+       The training set to be used for the optimization. Supports two different formats:  
+       (1) A boolean mask with trainer pixels having values of True. Must be of the same shape as image.  
+       (2) A shape (2, N_{train}) array, with the first row being the y indices and the second row being the 
+           corresponding x indices of the trainer pixels.  
+       If not provided, will construct the training set using sig_clip and max_clip.  
+       Default: None.
+       
+    BP: {boolean numpy array, "asnan", shape (2,N_{bad}) int numpy array}, optional
+       The bad pixels. If a training set pixel is too close to at least one of the bad pixels, it will be removed
+       from the training set. Supports three different formats:  
+       (1) A boolean mask with bad pixels having values of True. Must be of the same shape as image.   
+       (2) The string "asnan", meaning that the bad pixels are labeled in the image by np.nan   
+       (3) A shape (2, N_{bad}) array, with the first row giving the y indices and the second row giving the 
+           corresponding x indices of the bad pixels.  
+       Default: "asnan".
+       
+    sig_data: float, optional
+       Same as in GPR_Kernel. Default: 1.  
+    
+    K: callable, optional
+       Same as in GPR_Kernel. Default: Squared_Expo.  
+    
+    width: int, optional
+       Same as in GPR_Kernel. Default: 9. 
+    
+    sig_clip: float, optional
+       Pixels that are smaller than median + sig_clip * median absolute deviation of the image will not be 
+       used in the training process.  Default: 10.  
+       
+    max_clip: float, optional
+       Pixels that are greater than max(image)/max_clip will not be used in the training process. Default: 5.
+        
+    init_guess: array-like, optional
+       Initial guess for the training process. By default, the 0th element gives the initial guess of a and the 
+       1st element gives the initial guess of h. If the size of init_guess is 3, the training optimizes h_x and
+       h_y separately instead of using h for all directions. In that case, the 1st element gives the initial 
+       guess of h_x, and the 2nd element gives the initial guess of h_y. Default: [1,1].
+        
+    upper_bound: boolean, optional
+       If True, will set a soft upper bound on a by multiplying the mean absolute residual with the penalty 
+       function 1+exp[(a-mu)/tau]. Default: True.
+      
+    mu: float, optional
+       A parameter in the penalty function scaling the soft upper bound on the value of a. Default: 3000.
+       
+    tau: float, optional
+       A parameter in the penalty function affecting how much a can penetrate the soft upper bound. Default: 200.
+       
+    Returns
+    -------
+    para: array-like
+       The optimized parameters, where a=para[0], and h=para[1].  
+    
+    Residual: list
+       The residual of the optimization. The 0th element is the minimized mean absolute residual, and the 1st 
+       element is the full residual vector. 
+       
+    TS: boolean numpy array
+       The chosen training set.
+    """
     # Make a copy of the image
     Image=image.copy()
     # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
@@ -331,7 +436,7 @@ def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
             return np.mean(np.abs(residual))
     para=optimize.minimize(Residual,np.sqrt(init_guess),method="Powell").x
     return para**2,Residual(para,full_residual=True),TS
-#%%
+
 def Fix_Image(image,BP,TS=None,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1],bad_to_nan=True):
     # Make a copy of the image
     Image=image.copy()
