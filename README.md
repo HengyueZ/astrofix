@@ -1,6 +1,5 @@
 # Astro-Fix: Correcting Astronomical Bad Pixels in Python
 **Authors:** Hengyue Zhang, Timothy D. Brandt
-'box'
 
 ## Descriptions
 **astrofix** is an astronomical image correction algorithm based on Gaussian Process Regression. It trains itself to apply the optimal interpolation kernel for each image, performing multiple times better than median replacement and interpolation with a fixed kernel.
