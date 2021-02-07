@@ -35,6 +35,7 @@ def Squared_Expo(x1,x2,y1,y2,a,h):
     Cov: float numpy array
        The covariance matrix.
     """
+    
     # Check if separate h_x and h_y are used
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
@@ -78,6 +79,7 @@ def Ornstein_U(x1,x2,y1,y2,a,h):
     Cov: float numpy array
        The covariance matrix.
     """
+    
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
             raise ValueError("For a stretched kernel, h must have exactly two values (h_x and h_y)")
@@ -119,6 +121,7 @@ def Periodic(x1,x2,y1,y2,a,h):
     Cov: float numpy array
        The covariance matrix.
     """
+    
     if type(h)==list or type(h)==np.ndarray:
         if len(h) != 2:
             raise ValueError("For a stretched kernel, h must have exactly two values (h_x and h_y)")
@@ -179,6 +182,7 @@ def GPR_Kernel (a,h,sig_data=1,K=Squared_Expo,close_BP=None,width=9,badpix=None,
     Kernel: float numpy array
        The constructed kernel.
     """
+    
     if badpix is None:
         badpix=[width//2,width//2]
     if close_BP is None:
@@ -247,6 +251,7 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
     GPR_fixed_image: float numpy array
        The fixed image.
     """
+    
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
@@ -308,7 +313,7 @@ def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
     TS: boolean numpy arrary or shape (2,N_{train}) int numpy array, optional 
        The training set to be used for the optimization. Supports two different formats:  
        (1) A boolean mask with trainer pixels having values of True. Must be of the same shape as image.  
-       (2) A shape (2, N_{train}) array, with the first row being the y indices and the second row being the 
+       (2) A shape (2, N_{train}) array, with the first row giving the y indices and the second row giving the 
            corresponding x indices of the trainer pixels.  
        If not provided, will construct the training set using sig_clip and max_clip.  
        Default: None.
@@ -366,6 +371,7 @@ def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
     TS: boolean numpy array
        The chosen training set.
     """
+    
     # Make a copy of the image
     Image=image.copy()
     # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
@@ -438,6 +444,67 @@ def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
     return para**2,Residual(para,full_residual=True),TS
 
 def Fix_Image(image,BP,TS=None,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1],bad_to_nan=True):
+    """
+    Fix_Image(image,BP,TS=None,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squared_Expo,init_guess=[1,1],bad_to_nan=True):
+    Fixing bad pixels on an image.
+    
+    Parameters
+    ----------
+    image: numpy array
+       The image to be fixed.  
+       
+    BP: {boolean numpy array, "asnan", shape (2,N_{bad}) int numpy array}
+       The bad pixels to be fixed. Supports three different formats: 
+       (1) A boolean mask with bad pixels having values of True. Must be of the same shape as image.   
+       (2) The string "asnan", meaning that the bad pixels are labeled in the image by np.nan   
+       (3) A shape (2, N_{bad}) array, with the first row giving the y indices and the second row giving the corresponding 
+           x indices of the bad pixels.      
+       
+    TS: boolean numpy arrary or shape (2,N_{train}) int numpy array, optional 
+       The training set to be used for the optimization. Supports two different formats:  
+       (1) A boolean mask with trainer pixels having values of True. Must be of the same shape as image.  
+       (2) A shape (2, N_{train}) array, with the first row giving the y indices and the second row giving the 
+           corresponding x indices of the trainer pixels.  
+       If not provided, will construct the training set using sig_clip and max_clip.  
+       Default: None.
+       
+    sig_clip: float, optional
+       Pixels that are smaller than median + sig_clip * median absolute deviation of the image will not be used in 
+       the training process.  Default: 10.  
+       
+    max_clip: float, optional
+       Pixels that are greater than max(image)/max_clip will not be used in the training process. Default: 5.  
+       
+    sig_data: float, optional 
+       Same as in GPR_Kernel. Default: 1.  
+       
+    width:  int, optional
+       Same as in GPR_Kernel. Default: 9.  
+       
+    K: callable, optional
+       Same as in GPR_Kernel. Default: Squared_Expo.  
+    
+    init_guess: array-like, optional
+       Initial guess for the training process. By default, the 0th element gives the initial guess of a and the 1st 
+       element gives the initial guess of h. If the size of init_guess is 3, the training optimizes h_x and h_y separately 
+       instead of using h for all directions. In that case, the 1st element gives the initial guess of h_x, 
+       and the 2nd element gives the initial guess of h_y. Default: [1,1].
+       
+    bad_to_nan: boolean, optional
+       If True, bad pixels will have their values replaced by np.nan so that they will be excluded in the training process. Default: True
+       
+    Returns:
+    -------
+    fixed_im:  float numpy array
+       The fixed image.  
+    
+    para: array-like
+       The optimized parameters, where a=para[0], and h=para[1]. 
+       
+    TS: boolean numpy array
+       The chosen training set.
+    """
+    
     # Make a copy of the image
     Image=image.copy()
     # Remove repeating indices
