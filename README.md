@@ -12,3 +12,4 @@ Please cite our original paper at [].
 A sample Jupiter notebook showing the basic usage of **astrofix** is attached. The image used in the example is available at []  
 
 ## License
+The project is licensed under the terms of the BSD 3-clause license. See the License file for details.
