@@ -7,6 +7,10 @@
 Please cite our original paper at [].  
 
 ## Installation
+To install, git clone the repo by running `git clone https://github.com/HengyueZ/astrofix`.  
+Then, run: `cd astrofix`. You will be under the root directory of this repo.   
+Then, run: `pip install -e .` to finally install **astrofix**.  
+If something goes wrong with the installation, please let us know by submitting an issue ticket!
 
 ## Usage
 A sample Jupiter notebook showing the basic usage of **astrofix** is attached. The image used in the example is available at []  
