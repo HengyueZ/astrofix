@@ -14,7 +14,7 @@ If something goes wrong with the installation, please let us know by submitting 
 
 ## Usage
 A sample Jupiter notebook showing the basic usage of **astrofix** is attached. The image used in the example is available at the links below:  
-[NGC 104](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20200917-0147-e91&start=2020-09-17%2000%3A00&end=2020-09-18%2000%3A00&id=&public=true)
+[NGC 104](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20200917-0147-e91&start=2020-09-17%2000%3A00&end=2020-09-18%2000%3A00&id=&public=true)  
 [M_15](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20201021-0084-e91&start=2020-10-21%2000%3A00&end=2021-10-22%2000%3A00&id=&public=true)
 
 ## License
