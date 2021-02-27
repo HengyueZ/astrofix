@@ -1,8 +1,0 @@
-README.md
-setup.py
-astrofix/Fix_Images.py
-astrofix/__init__.py
-astrofix.egg-info/PKG-INFO
-astrofix.egg-info/SOURCES.txt
-astrofix.egg-info/dependency_links.txt
-astrofix.egg-info/top_level.txt
