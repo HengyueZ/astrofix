@@ -10,10 +10,12 @@ Please cite our original paper at [].
 To install, git clone the repo by running `git clone https://github.com/HengyueZ/astrofix`.  
 Then, run: `cd astrofix`. You will be under the root directory of this repo.   
 Then, run: `pip install -e .` to finally install **astrofix**.  
-If something goes wrong with the installation, please let us know by submitting an issue ticket!
+
+### Tests
+To test the installation, you will need to download [a sample image of NGC 104](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20200917-0147-e91&start=2020-09-17%2000%3A00&end=2020-09-18%2000%3A00&id=&public=true) from the LCO archive, and put it under your local astrofix/astrofix/tests folder. Then, you can run the tests by `cd astrofix` (if you have not done so in the installation step) and `pytest -sv`. There are three tests in total and should take about 30 seconds. If any of the tests fail, please let us know by submitting an issue ticket!  
 
 ## Usage
-A sample Jupiter notebook showing the basic usage of **astrofix** is attached. The images used in the example are available at the links below:  
+A sample Jupiter notebook showing the basic usage of **astrofix** is attached. The images used in the example are available from the LCO archive at the links below:  
 [NGC104](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20200917-0147-e91&start=2020-09-17%2000%3A00&end=2020-09-18%2000%3A00&id=&public=true)  
 [M15](https://archive.lco.global/?q=a&RLEVEL=&PROPID=&INSTRUME=&OBJECT=&SITEID=&TELID=&FILTER=&OBSTYPE=&EXPTIME=&BLKUID=&REQNUM=&basename=cpt0m407-kb84-20201021-0084-e91&start=2020-10-21%2000%3A00&end=2021-10-22%2000%3A00&id=&public=true)
 
