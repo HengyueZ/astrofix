@@ -37,5 +37,5 @@ def test_fixing_image():
     img=test_im.copy()
     img[BP_mask]=np.nan
     fixed_img,para,TS=astrofix.Fix_Image(img,"asnan",max_clip=1)
-    assert np.allclose(fixed_img-test_im,corr_resi)
+    assert np.allclose(fixed_img-test_im,corr_resi,rtol=1e-3,atol=1e-5)
     assert np.isclose(np.count_nonzero(TS),278951)
