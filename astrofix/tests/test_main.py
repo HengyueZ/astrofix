@@ -25,7 +25,7 @@ def test_training_results():
     test_im= fits.open(file)[1].data
     corr_para=[3.3935965688743535,0.9324235469929149]
     para,resi,TS=astrofix.GPR_Train(test_im,max_clip=1)
-    assert np.allclose(para,corr_para)
+    assert np.allclose(para,corr_para,rtol=1e-3)
     assert np.isclose(np.count_nonzero(TS),281585)
         
 def test_fixing_image():
@@ -37,5 +37,5 @@ def test_fixing_image():
     img=test_im.copy()
     img[BP_mask]=np.nan
     fixed_img,para,TS=astrofix.Fix_Image(img,"asnan",max_clip=1)
-    assert np.allclose(fixed_img-test_im,corr_resi,rtol=1e-3,atol=1e-5)
+    assert np.allclose(fixed_img-test_im,corr_resi,rtol=1e-3,atol=1e-2)
     assert np.isclose(np.count_nonzero(TS),278951)
