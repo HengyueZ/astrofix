@@ -4,7 +4,7 @@
 ## Description
 **astrofix** is an astronomical image correction algorithm based on Gaussian Process Regression. It trains itself to apply the optimal interpolation kernel for each image, performing multiple times better than median replacement and interpolation with a fixed kernel.
 
-Please cite our original paper at [Zhang, H. & Brandt, T. D. 2021, AJ, in press](https://arxiv.org/abs/2103.12250).  
+Please cite our original paper at [Zhang, H. & Brandt, T. D. 2021, AJ, 162, 139](https://doi.org/10.3847/1538-3881/ac1348).  
 
 ## Installation
 To install, git clone the repo by running `git clone https://github.com/HengyueZ/astrofix`.  
