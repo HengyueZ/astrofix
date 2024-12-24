@@ -255,7 +255,7 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
     # Make a copy of the image
     Image=image.copy()
     # Supports images with bad pixels labeled as NaN
-    if BP is "asnan":
+    if isinstance(BP,str) and BP == "asnan":
         BP_mask=np.isnan(Image)
         # Convert Mask to indices of bad pixels
         BP_indices=np.asarray(np.nonzero(BP_mask))
@@ -263,13 +263,15 @@ def Interpolate(a,h,image,BP,sig_data=1,K=Squared_Expo,width=9):
         # The nan pixels will be assigned zero weights anyway so any finite value can be used here
         Image[BP_mask]=0
     # Supports bad pixels indicated by a boolean mask
-    elif BP.dtype == bool:
+    elif isinstance(BP,np.ndarray) and BP.dtype == bool:
         BP_mask=BP.copy()
         BP_indices=np.asarray(np.nonzero(BP))
-    else:
+    elif isinstance(BP,np.ndarray) and BP.shape[0] == 2:
         BP_mask=np.zeros(image.shape,dtype=bool)
         BP_mask[BP[0],BP[1]]=True
         BP_indices=BP.copy()
+    else:
+        raise ValueError("Invalid value for BP. Expected 'asnan', a boolean mask, or a (2, N_bad) array.")
     Nbad=BP_indices.shape[1]
     fixed_pix=np.zeros(Nbad)
     GPR_fixed_image=image.copy()
@@ -375,7 +377,7 @@ def GPR_Train(image,TS=None,BP="asnan",sig_data=1,K=Squared_Expo,width=9,\
     # Make a copy of the image
     Image=image.copy()
     # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
-    if BP is not "asnan":
+    if isinstance(BP,np.ndarray):
         Image=Image.astype(float)
         if BP.dtype==bool:
             Image[BP]=np.nan
@@ -508,16 +510,16 @@ def Fix_Image(image,BP,TS=None,sig_clip=10,max_clip=5,sig_data=1,width=9,K=Squar
     # Make a copy of the image
     Image=image.copy()
     # Remove repeating indices
-    if not (BP is "asnan" or BP.dtype==bool):
+    if isinstance(BP,np.ndarray) and BP.shape[0] == 2:
         BP=np.unique(BP,axis=1)
     # Check if bad pixels are wished to be included in the training. If not, flag them as NaN
     if bad_to_nan:
         Image=Image.astype(float)
         current_BP="asnan"
-        if not (BP is "asnan") and BP.dtype==bool:
+        if isinstance(BP,np.ndarray) and BP.dtype == bool:
             # Make the bad pixels nan to avoid them in the training set
             Image[BP]=np.nan
-        if not (BP is "asnan" or BP.dtype==bool):
+        if isinstance(BP,np.ndarray) and BP.shape[0] == 2:
             Image[BP[0],BP[1]]=np.nan
     else:
         current_BP=BP.copy()
